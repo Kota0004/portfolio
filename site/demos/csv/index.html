@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CSV 集計ツールのデモ | Kota0004</title>
+<meta name="description" content="CSV ファイルを読み込み、列を選ぶだけでグループごとの合計・平均・件数・最大・最小やピボット表を作るツールのデモ。Shift_JIS の CSV も読めて、ファイルはどこにも送信されません。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b6bcb'/%3E%3Ctext x='16' y='22.5' font-size='17' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='%23fff'%3EK%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/base.css">
+<link rel="stylesheet" href="style.css">
+<script src="csv-core.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="site-header"><div class="container">
+  <a class="brand" href="../../">Kota0004</a>
+  <nav aria-label="サイト内"><a href="../../#works">制作実績</a><a href="../../#demos">デモ</a><a href="../../#services">できること</a></nav>
+</div></header>
+
+<main>
+  <div class="container">
+
+    <div class="page-head">
+      <p class="eyebrow">デモ作品</p>
+      <h1>CSV 集計ツール</h1>
+      <p class="lead">CSV ファイルを読み込んで、「店舗ごとの売上の合計」「月ごとの平均」のような集計を、列を選ぶだけで行うツールの見本です。表計算ソフトで毎回手作業している集計を自動にする例としてご覧ください。</p>
+    </div>
+
+    <p class="notice notice--info privacy-notice" id="privacy-notice"><strong>ファイルはこのブラウザの中だけで処理され、どこにも送信されません。</strong></p>
+
+    <!-- ============================================================ 1. 読み込み -->
+    <section class="card step" aria-labelledby="load-title">
+      <h2 id="load-title"><span class="step__num" aria-hidden="true">1</span>CSV ファイルを読み込む</h2>
+
+      <div class="dropzone" id="dropzone">
+        <p class="dropzone__text" aria-hidden="true"><span>ここに CSV ファイルを</span><span>ドラッグ＆ドロップ</span></p>
+        <p class="dropzone__or" aria-hidden="true">または</p>
+        <div class="dropzone__actions">
+          <input type="file" id="file-input" class="file-input" accept=".csv,.txt,text/csv,text/plain" aria-describedby="load-hint">
+          <label for="file-input" class="btn btn--primary file-button">ファイルを選ぶ</label>
+          <button type="button" class="btn" id="load-sample">サンプルを読み込む</button>
+        </div>
+      </div>
+      <p class="hint" id="load-hint">文字コードは UTF-8（BOM あり・なし）と Shift_JIS（Windows の Excel で「CSV（コンマ区切り）」として保存したもの）を自動で見分けます。1 行目は見出しとして使います。サンプルは架空のパン屋 3 店舗の売上データ（2026 年 7〜9 月、100 行）です。</p>
+
+      <div class="load-status" id="load-status" role="status" aria-live="polite"></div>
+      <div class="load-error" id="load-error" role="alert"></div>
+      <ul class="load-warnings notice notice--warn" id="load-warnings" aria-label="読み込みについての注意" hidden></ul>
+
+      <div class="preview" id="preview" hidden>
+        <h3 id="preview-title">読み込んだデータ（先頭 <span id="preview-count">5</span> 行）</h3>
+        <p class="hint">見出しの下に、列の種類の推定（<span class="type-badge type-badge--number">数値</span>・<span class="type-badge type-badge--date">日付</span>・<span class="type-badge type-badge--text">文字</span>）を表示しています。</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-labelledby="preview-title">
+          <table class="data preview-table">
+            <thead id="preview-head"></thead>
+            <tbody id="preview-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 2. 集計の設定 -->
+    <section class="card step" id="settings-card" aria-labelledby="settings-title" hidden>
+      <h2 id="settings-title"><span class="step__num" aria-hidden="true">2</span>集計のしかたを選ぶ</h2>
+      <form id="settings-form" novalidate>
+        <div class="settings-grid">
+          <div class="field">
+            <label for="group-col" class="required">グループにする列</label>
+            <select id="group-col" name="group" required aria-describedby="group-hint err-group"></select>
+            <p class="hint" id="group-hint">この列の値ごとにまとめます（例: 店舗ごと）。</p>
+            <p class="error" id="err-group" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <label for="column-col">さらに分ける列<span class="optional">任意</span></label>
+            <select id="column-col" name="column" aria-describedby="column-hint err-column"></select>
+            <p class="hint" id="column-hint">選ぶと、行と列の両方で分けたクロス集計（ピボット表）になります。</p>
+            <p class="error" id="err-column" aria-live="polite"></p>
+          </div>
+
+          <fieldset class="field date-unit" id="date-unit" hidden aria-describedby="date-unit-hint">
+            <legend>日付のまとめ方</legend>
+            <div class="radio-row">
+              <label class="radio"><input type="radio" name="date-unit" value="day"> 日ごと</label>
+              <label class="radio"><input type="radio" name="date-unit" value="month" checked> 月ごと</label>
+            </div>
+            <p class="hint" id="date-unit-hint">「2026/09/01」「2026-09-01」「2026/9/1」のような書き方が混ざっていても、同じ日としてまとめます。</p>
+          </fieldset>
+
+          <div class="field">
+            <label for="method">集計のしかた</label>
+            <select id="method" name="method">
+              <option value="sum">合計</option>
+              <option value="avg">平均</option>
+              <option value="count">件数（行の数）</option>
+              <option value="max">最大</option>
+              <option value="min">最小</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="value-col">集計する列</label>
+            <select id="value-col" name="value" aria-describedby="value-hint err-value"></select>
+            <p class="hint" id="value-hint"></p>
+            <p class="error" id="err-value" aria-live="polite"></p>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn btn--primary">集計する</button>
+          <p class="hint actions__hint">選び直すと、結果もすぐに変わります。</p>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============================================================ 3. 結果 -->
+    <section class="card step" id="result-card" aria-labelledby="result-title" hidden>
+      <h2 id="result-title" tabindex="-1"><span class="step__num" aria-hidden="true">3</span>結果</h2>
+      <p class="result-heading" id="result-heading"></p>
+      <div class="result-status" id="result-status" role="status" aria-live="polite"></div>
+      <ul class="result-notes" id="result-notes"></ul>
+
+      <figure class="chart" id="chart" hidden>
+        <figcaption class="chart__caption" id="chart-caption"></figcaption>
+        <div class="chart__plot" id="chart-plot"></div>
+        <div class="chart__tooltip" id="chart-tooltip" hidden></div>
+        <p class="visually-hidden" id="chart-live" aria-live="polite"></p>
+      </figure>
+      <p class="hint" id="chart-note" hidden></p>
+
+      <h3 class="table-title" id="table-title">表</h3>
+      <p class="hint" id="table-hint">見出しのボタンを押すと、その列で並べ替えます（もう一度押すと逆の順）。<span id="table-scroll-hint" hidden>表は横にずらして見られます。</span></p>
+      <div class="table-wrap result-wrap" id="result-wrap" tabindex="0" role="region" aria-labelledby="table-title">
+        <table class="data result-table" id="result-table">
+          <caption class="visually-hidden" id="result-caption"></caption>
+          <thead id="result-head"></thead>
+          <tbody id="result-body"></tbody>
+          <tfoot id="result-foot"></tfoot>
+        </table>
+      </div>
+      <p class="hint" id="table-limit-note" hidden></p>
+
+      <div class="save">
+        <button type="button" class="btn btn--primary" id="save-csv">結果を CSV で保存</button>
+        <p class="hint">表に出ている順に、合計の行まで含めて保存します。Excel でそのまま開けるよう、BOM つきの UTF-8 で書き出します。</p>
+        <p class="save-status" id="save-status" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- ============================================================ 説明 -->
+    <section class="card tips" aria-labelledby="tips-title">
+      <h2 id="tips-title">試し方</h2>
+      <ul>
+        <li>サンプルには、桁区切りつきの金額（<code>"1,200"</code>）、「¥」や「円」のついた金額、返品を表す「▲」つきの金額、全角の数字、数値として読めない値（「未集計」）と空欄、カンマや改行を含む備考を、わざと混ぜてあります。</li>
+        <li>「グループにする列」を「日付」にして「月ごと」を選ぶと、月別の集計になります。</li>
+        <li>「さらに分ける列」で「商品」を選ぶと、店舗 × 商品のピボット表になります。</li>
+        <li>お手元の CSV を読み込んでも、ファイルは外に送られません。ブラウザの開発者ツールの「ネットワーク」の欄でも、通信が起きていないことを確かめられます。</li>
+      </ul>
+    </section>
+
+    <section class="card prod" aria-labelledby="prod-title">
+      <h2 id="prod-title">お仕事としてお作りするときは</h2>
+      <p>このデモは見本のため、どんな CSV にも使える汎用の形にしています。実際の業務に合わせるときは、たとえば次のようにできます。</p>
+      <ul>
+        <li><strong>決まった集計をボタン 1 つで:</strong> 毎月の報告に使う表の形を決めておき、ファイルを入れるだけで同じ表ができるようにします。</li>
+        <li><strong>前処理:</strong> 複数のファイルをまとめて読み込む、列の名前や並びが違うファイルをそろえる、といった手作業も自動にできます。</li>
+        <li><strong>表計算ソフトの中で:</strong> Excel のマクロや Google Apps Script を使い、いつものファイルの中で同じ集計を動かす形にもできます。</li>
+      </ul>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer"><div class="container">© 2026 Kota0004 ・ <a href="https://github.com/Kota0004">GitHub</a></div></footer>
+</body>
+</html>

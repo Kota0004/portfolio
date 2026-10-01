@@ -1,0 +1,8 @@
+# テストのために入れる playwright など（公開リポジトリに入れない）
+node_modules/
+package.json
+package-lock.json
+# スクリーンショットなどの一時ファイル
+/*.png
+tests/**/*.png
+__pycache__/
