@@ -1,0 +1,105 @@
+# site/ の中身を GitHub Pages に公開する。
+#
+#   https://kota0004.github.io/portfolio/  （Pages を有効にしたあと）
+#
+# 公開するのは site/ だけ。drafts/ や tests/ はサイトに載らない。
+# 公開の前に単体テストを走らせ、落ちたら公開しない。
+name: サイトを公開
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 公開が重なったときは順番に処理する。進行中を打ち切らないのは、
+# 中途半端な状態で公開されるのを避けるため。
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # ここで落ちたら、以降のステップは動かず公開されない。
+      - name: 単体テスト
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(tests/unit/*.test.js)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "単体テストのファイルがありません（tests/unit/*.test.js）"
+            exit 0
+          fi
+          node --test "${files[@]}"
+
+      - name: 公開するファイルを確かめる
+        working-directory: site
+        run: |
+          test -f index.html       || { echo "site/index.html がない"; exit 1; }
+          test -f assets/base.css  || { echo "site/assets/base.css がない"; exit 1; }
+          echo "公開するファイル:"
+          find . -type f | sort
+
+      # Pages がまだ有効になっていないかを先に見る。
+      #
+      # ワークフローの GITHUB_TOKEN では Pages サイトを「新規作成」できない。
+      # 有効化だけは人が一度だけ設定する必要があるので、それまではここで
+      # 手順を書いて正常終了する。
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          code=$(curl -s -o /tmp/pages.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages")
+          if [ "$code" = "404" ]; then
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            {
+              echo "### 公開はまだ始まっていません"
+              echo
+              echo "Settings → Pages → Build and deployment → Source を GitHub Actions にしてから再実行してください。"
+              echo
+              echo "1. https://github.com/${{ github.repository }}/settings/pages を開く"
+              echo "2. **Build and deployment** の **Source** を **GitHub Actions** にする"
+              echo "3. このワークフローを Re-run する（以後は main へのマージで自動的に公開されます）"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "Pages が未設定です。Settings → Pages → Build and deployment → Source を GitHub Actions にしてから再実行してください。"
+            exit 0
+          fi
+          if [ "$code" != "200" ]; then
+            echo "Pages の状態を取得できませんでした (HTTP $code)"
+            cat /tmp/pages.json
+            exit 1
+          fi
+          echo "ready=yes" >> "$GITHUB_OUTPUT"
+
+      - if: steps.check.outputs.ready == 'yes'
+        uses: actions/configure-pages@v5
+
+      - if: steps.check.outputs.ready == 'yes'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - if: steps.check.outputs.ready == 'yes'
+        id: deploy
+        uses: actions/deploy-pages@v4

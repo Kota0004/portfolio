@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kota0004 | 制作実績</title>
+<meta name="description" content="Kota0004 の制作実績とデモ作品。防災アプリ「みずみち」や空き教室検索「RoomRadar」の紹介と、小さな Web ツール・表計算の自動化のご案内。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b6bcb'/%3E%3Ctext x='16' y='22.5' font-size='17' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='%23fff'%3EK%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+<header class="site-header"><div class="container">
+  <a class="brand" href="./">Kota0004</a>
+  <nav aria-label="サイト内"><a href="./#works">制作実績</a><a href="./#demos">デモ</a><a href="./#services">できること</a></nav>
+</div></header>
+
+<main>
+  <div class="container">
+
+    <section class="hero" aria-labelledby="hero-title">
+      <p class="hero__eyebrow">制作実績とできること</p>
+      <h1 id="hero-title">Kota0004</h1>
+      <p class="hero__lead">防災アプリや空き教室の検索サービスを、企画から開発・運営まで手がけています。小さな Web ツールや、表計算の作業の自動化をお作りします。</p>
+      <p class="notice notice--info ai-note">制作には AI（Claude Code）を活用しています。動作の確認と最終チェックは自分で行います。</p>
+      <ul class="jump" aria-label="このページの内容">
+        <li><a class="btn" href="#works">制作実績を見る</a></li>
+        <li><a class="btn" href="#demos">デモを試す</a></li>
+        <li><a class="btn" href="#services">できること</a></li>
+      </ul>
+    </section>
+
+    <section id="works" class="section" aria-labelledby="works-title">
+      <h2 id="works-title">制作実績</h2>
+      <p class="section__lead">自分で企画し、公開して動かしているものです。</p>
+
+      <div class="works">
+        <article class="card work" id="work-mizumichi" aria-labelledby="mizumichi-title">
+          <div class="work__head">
+            <h3 id="mizumichi-title">みずみち <span class="work__sub">— 冠水道路アラート</span></h3>
+            <p class="work__badges"><span class="badge badge--ok">試作・公開中</span></p>
+          </div>
+          <p>大雨のときに、冠水しやすい道路の危険度を地図で知らせる防災アプリです。</p>
+
+          <dl class="facts">
+            <div>
+              <dt>きっかけ</dt>
+              <dd>2026年8月の千葉豪雨で、冠水に気づかず進入した車が多数動けなくなったこと。</dd>
+            </div>
+            <div>
+              <dt>できること</dt>
+              <dd>
+                <ul>
+                  <li>関東の1都6県（東京・埼玉・神奈川・栃木・千葉・茨城・群馬）の道路冠水注意箇所 827 か所を地図に載せています。</li>
+                  <li>気象庁アメダスの雨量を GitHub Actions が毎時自動で取り込み、地点ごとの冠水しやすさ（閾値）と比べて、危険度を色分けします。</li>
+                  <li>827 か所のうち 581 か所は資料に番地が無く、位置は市区町村レベルの推定です。こうした地点では地点の警報を鳴らさず、区別して表示しています。</li>
+                </ul>
+              </dd>
+            </div>
+            <div>
+              <dt>品質の確かめ方</dt>
+              <dd>
+                <ul>
+                  <li>危険度の計算は Python とブラウザ（JavaScript）の2か所にあり、2,700 通りの入力で結果が一致することを自動テストで確かめています。</li>
+                  <li>ブラウザでの動作も自動で検証しています。</li>
+                </ul>
+              </dd>
+            </div>
+            <div>
+              <dt>担当</dt>
+              <dd>企画・開発・運営（個人制作）</dd>
+            </div>
+            <div>
+              <dt>使った技術</dt>
+              <dd>
+                <ul class="tags" aria-label="みずみちで使った技術">
+                  <li>JavaScript</li>
+                  <li>MapLibre GL JS</li>
+                  <li>Python</li>
+                  <li>GitHub Actions</li>
+                  <li>GitHub Pages</li>
+                  <li>国土地理院の地図・標高データ</li>
+                  <li>気象庁アメダス</li>
+                </ul>
+              </dd>
+            </div>
+          </dl>
+
+          <p class="notice notice--warn disclaimer">参考情報であり、通行できるかどうかを保証するものではありません。</p>
+
+          <p class="actions">
+            <a class="btn btn--primary" href="https://kota0004.github.io/mizumichi/">みずみちを開く</a>
+            <a class="btn" href="https://github.com/Kota0004/mizumichi">みずみちのソースコード</a>
+          </p>
+        </article>
+
+        <article class="card work" id="work-roomradar" aria-labelledby="roomradar-title">
+          <div class="work__head">
+            <h3 id="roomradar-title">RoomRadar <span class="work__sub">— 空き教室検索</span></h3>
+            <p class="work__badges"><span class="badge badge--warn status-badge">大学非公式・テスト運用中</span></p>
+          </div>
+          <p>日本大学理工学部の空き教室を探せる Web サービスです。大学が公開している時間割から、授業の入っていない教室を表示します。</p>
+          <p class="notice notice--warn unofficial">大学非公式・テスト運用中のサービスです。大学公式のサービスではありません。</p>
+
+          <dl class="facts">
+            <div>
+              <dt>工夫したこと</dt>
+              <dd>利用者が「使用中」を報告でき、2人以上が報告すると「使用中の可能性」と表示します。時間割だけでは分からない実態を補うためです。</dd>
+            </div>
+            <div>
+              <dt>担当</dt>
+              <dd>企画・開発・運営</dd>
+            </div>
+            <div>
+              <dt>使った技術</dt>
+              <dd>
+                <ul class="tags" aria-label="RoomRadar で使った技術">
+                  <li>Python（Flask）</li>
+                  <li>Render</li>
+                  <li>GitHub Pages</li>
+                  <li>GitHub Actions</li>
+                </ul>
+              </dd>
+            </div>
+          </dl>
+
+          <p class="actions">
+            <a class="btn btn--primary" href="https://nu-roomradar.github.io/nust-room-search/">RoomRadar を開く</a>
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="demos" class="section" aria-labelledby="demos-title">
+      <h2 id="demos-title">デモ作品</h2>
+      <p class="section__lead">お作りできるものの見本です。どちらも<strong>架空のデータ</strong>で動きます。入力したデータや読み込んだファイルは、外部に送られません（ブラウザの中だけで処理します）。</p>
+
+      <div class="grid">
+        <article class="card demo" aria-labelledby="demo-reservation-title">
+          <h3 id="demo-reservation-title">予約フォーム</h3>
+          <p>空き枠を見ながら予約できるフォームと、受け付けた予約を確かめる管理画面のセットです。</p>
+          <ul class="checks">
+            <li>空き枠の表示</li>
+            <li>入力内容のチェック</li>
+            <li>送信前の確認画面</li>
+            <li>二重予約の防止</li>
+            <li>管理画面での一覧と CSV 書き出し</li>
+          </ul>
+          <p class="actions"><a class="btn btn--primary" href="demos/reservation/">予約フォームのデモを開く</a></p>
+        </article>
+
+        <article class="card demo" aria-labelledby="demo-csv-title">
+          <h3 id="demo-csv-title">CSV 集計ツール</h3>
+          <p>CSV ファイルを読み込んで、表計算でよく行う集計をまとめて行うツールです。</p>
+          <ul class="checks">
+            <li>CSV の読み込み（Excel で保存した Shift_JIS の CSV も読めます）</li>
+            <li>列を選んで合計・平均・件数などを集計</li>
+            <li>集計結果のグラフ表示</li>
+            <li>結果を CSV で保存</li>
+          </ul>
+          <p class="actions"><a class="btn btn--primary" href="demos/csv/">CSV 集計ツールのデモを開く</a></p>
+        </article>
+      </div>
+    </section>
+
+    <section id="services" class="section" aria-labelledby="services-title">
+      <h2 id="services-title">できること</h2>
+      <p class="section__lead">次のようなものをお作りします。</p>
+
+      <div class="grid">
+        <article class="card service" aria-labelledby="service-a-title">
+          <h3 id="service-a-title"><span class="service__mark" aria-hidden="true">A</span>予約・申込フォームなど小さな Web ツール</h3>
+          <p>申込をメールで受けて手作業でまとめている、といった作業を、フォームと一覧ページに置きかえます。</p>
+          <ul>
+            <li>予約・申込フォーム</li>
+            <li>集計ページ・一覧ページ</li>
+            <li>簡単な管理画面</li>
+          </ul>
+        </article>
+
+        <article class="card service" aria-labelledby="service-b-title">
+          <h3 id="service-b-title"><span class="service__mark" aria-hidden="true">B</span>Excel・スプレッドシートの作業の自動化</h3>
+          <p>毎回同じ手順でくり返している表計算の作業を、自動で済むようにします。</p>
+          <ul>
+            <li>毎月の集計、別のシートへの転記</li>
+            <li>複数のファイルのとりまとめ</li>
+            <li>決まった形のレポートづくり</li>
+          </ul>
+        </article>
+
+        <article class="card service" aria-labelledby="service-c-title">
+          <h3 id="service-c-title"><span class="service__mark" aria-hidden="true">C</span>サークル・学生団体の出欠・予約ページ</h3>
+          <p>出欠の確認や予約の受け付けを、メンバーがスマホから答えられるページにまとめます。</p>
+          <ul>
+            <li>出欠の回答と集計</li>
+            <li>部屋や備品などの予約</li>
+          </ul>
+        </article>
+      </div>
+
+      <p class="notice consult">ご依頼・ご相談はココナラで受け付ける予定です（準備中）。</p>
+    </section>
+
+    <section class="section about-site" aria-labelledby="about-site-title">
+      <h2 id="about-site-title">このサイトについて</h2>
+      <p>このサイトとデモは、外部のスクリプト・Web フォント・アクセス解析を使わず、自前のファイルだけで動いています。表示は端末の設定に合わせて、ライトとダークが切り替わります。</p>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer"><div class="container">© 2026 Kota0004 ・ <a href="https://github.com/Kota0004">GitHub</a></div></footer>
+</body>
+</html>

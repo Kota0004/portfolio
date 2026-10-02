@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>予約フォームのデモ | Kota0004</title>
+<meta name="description" content="貸し会議室（架空）の予約フォームのデモ。空き枠の表示、入力チェック、確認画面、二重予約の防止、管理画面での一覧・取り消し・CSV 書き出しを、通信なしで試せます。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230b6bcb'/%3E%3Ctext x='16' y='22.5' font-size='17' font-family='sans-serif' font-weight='700' text-anchor='middle' fill='%23fff'%3EK%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="../../assets/base.css">
+<link rel="stylesheet" href="style.css">
+<script src="reservation-core.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="site-header"><div class="container">
+  <a class="brand" href="../../">Kota0004</a>
+  <nav aria-label="サイト内"><a href="../../#works">制作実績</a><a href="../../#demos">デモ</a><a href="../../#services">できること</a></nav>
+</div></header>
+
+<main>
+  <div class="container">
+
+    <div class="page-head">
+      <p class="eyebrow">デモ作品</p>
+      <h1>予約フォーム</h1>
+      <p class="lead">貸し会議室「サンプル会議室」（架空）の予約を例にした見本です。空いている時間を選んで予約し、管理画面で確かめたり取り消したりするところまで試せます。</p>
+    </div>
+
+    <section class="notice notice--warn demo-notice" aria-label="デモについてのお知らせ">
+      <p class="demo-notice__text"><strong>これはデモです。</strong>入力した内容はこのブラウザの中（localStorage）にだけ保存され、どこにも送信されません。</p>
+      <div class="demo-notice__side">
+        <button type="button" class="btn" id="reset-demo">デモを最初の状態に戻す</button>
+      </div>
+      <p class="demo-notice__status" id="reset-status" role="status" aria-live="polite"></p>
+      <p class="demo-notice__storage" id="storage-warning" hidden>このブラウザでは保存ができないため、予約はページを閉じると消えます（デモの動きはそのまま試せます）。</p>
+    </section>
+
+    <div class="tabs" role="tablist" aria-label="画面の切り替え">
+      <button type="button" role="tab" id="tab-book" aria-controls="panel-book" aria-selected="true">予約する</button>
+      <button type="button" role="tab" id="tab-admin" aria-controls="panel-admin" aria-selected="false" tabindex="-1">管理画面 <span class="tab-count" id="admin-count-badge">0件</span></button>
+    </div>
+
+    <!-- ============================================================ 予約する -->
+    <section id="panel-book" role="tabpanel" aria-labelledby="tab-book">
+
+      <ol class="steps" aria-label="予約の流れ">
+        <li data-step="form" aria-current="step"><span class="steps__num" aria-hidden="true">1</span>入力</li>
+        <li data-step="confirm"><span class="steps__num" aria-hidden="true">2</span>確認</li>
+        <li data-step="done"><span class="steps__num" aria-hidden="true">3</span>完了</li>
+      </ol>
+
+      <!-- 1. 入力 -->
+      <div id="view-form" class="view">
+        <form id="reserve-form" class="card" novalidate aria-labelledby="form-title">
+          <h2 id="form-title" tabindex="-1">日時とお客さま情報</h2>
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+
+          <fieldset class="field picker" id="date-group" aria-describedby="date-hint err-date">
+            <legend class="required">利用日</legend>
+            <p class="hint" id="date-hint">今日から14日先まで選べます。毎週水曜日は定休日のため選べません。</p>
+            <div class="date-grid" id="date-list"></div>
+            <p class="date-note" id="date-note" aria-live="polite"></p>
+            <p class="error" id="err-date" aria-live="polite"></p>
+          </fieldset>
+
+          <fieldset class="field picker" id="slot-group" aria-describedby="slot-hint err-slot">
+            <legend class="required">時間</legend>
+            <p class="hint" id="slot-hint"><span id="slot-date-label">利用日を選ぶと、その日の空き状況が出ます。</span></p>
+            <ul class="legend" aria-label="空き状況の見方">
+              <li><span class="legend__mark legend__mark--available" aria-hidden="true">○</span>空き（選べます）</li>
+              <li><span class="legend__mark legend__mark--booked" aria-hidden="true">×</span>予約済み</li>
+              <li><span class="legend__mark legend__mark--past" aria-hidden="true">−</span>受付終了（開始時刻を過ぎた枠）</li>
+            </ul>
+            <div class="slot-grid" id="slot-list"></div>
+            <p class="error" id="err-slot" aria-live="polite"></p>
+          </fieldset>
+
+          <div class="field">
+            <label for="f-name" class="required">お名前</label>
+            <input type="text" id="f-name" name="name" autocomplete="name" required aria-describedby="hint-name err-name">
+            <p class="hint" id="hint-name">50文字まで（<span class="counter" id="count-name">0</span>/50）</p>
+            <p class="error" id="err-name" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <label for="f-email" class="required">メールアドレス</label>
+            <input type="email" id="f-email" name="email" autocomplete="email" inputmode="email" spellcheck="false" autocapitalize="off" required aria-describedby="hint-email err-email">
+            <p class="hint" id="hint-email">例: name@example.com（デモのため、メールは送られません）</p>
+            <p class="error" id="err-email" aria-live="polite"></p>
+          </div>
+
+          <div class="field field--short">
+            <label for="f-people" class="required">人数</label>
+            <input type="text" id="f-people" name="people" inputmode="numeric" autocomplete="off" required aria-describedby="hint-people err-people">
+            <p class="hint" id="hint-people">1〜10人</p>
+            <p class="error" id="err-people" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <label for="f-purpose">利用目的</label>
+            <select id="f-purpose" name="purpose" aria-describedby="err-purpose"></select>
+            <p class="error" id="err-purpose" aria-live="polite"></p>
+          </div>
+
+          <div class="field">
+            <label for="f-note">備考<span class="optional">任意</span></label>
+            <textarea id="f-note" name="note" rows="3" aria-describedby="hint-note err-note"></textarea>
+            <p class="hint" id="hint-note">200文字まで（<span class="counter" id="count-note">0</span>/200）。機材の希望などがあれば。</p>
+            <p class="error" id="err-note" aria-live="polite"></p>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="btn btn--primary">入力内容を確認する</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 2. 確認 -->
+      <section id="view-confirm" class="view card" hidden aria-labelledby="confirm-title">
+        <h2 id="confirm-title" tabindex="-1">入力内容の確認</h2>
+        <p>この内容で予約します。よろしければ「予約する」を押してください。</p>
+        <dl class="summary" id="confirm-summary"></dl>
+        <div class="alert-box" id="confirm-error" role="alert"></div>
+        <div class="actions">
+          <button type="button" class="btn" id="back-to-form">修正する</button>
+          <button type="button" class="btn btn--primary" id="confirm-booking">予約する</button>
+          <button type="button" class="btn btn--primary" id="choose-again" hidden>時間を選び直す</button>
+        </div>
+      </section>
+
+      <!-- 3. 完了 -->
+      <section id="view-done" class="view card" hidden aria-labelledby="done-title">
+        <h2 id="done-title" tabindex="-1">予約を受け付けました</h2>
+        <div class="resno">
+          <p class="resno__label">予約番号</p>
+          <p class="resno__value" id="done-number"></p>
+          <p class="resno__hint">予約番号は「R ＋ 利用日 ＋ その日の受付順」で決まります。</p>
+        </div>
+        <dl class="summary" id="done-summary"></dl>
+        <p class="notice">デモのため、確認メールは送られません。受け付けた予約は「管理画面」で確かめられます。</p>
+        <div class="actions">
+          <button type="button" class="btn btn--primary" id="book-again">続けて予約する</button>
+          <button type="button" class="btn" id="go-admin">管理画面で確かめる</button>
+        </div>
+      </section>
+    </section>
+
+    <!-- ============================================================ 管理画面 -->
+    <section id="panel-admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
+      <div class="card">
+        <div class="admin-head">
+          <h2 id="admin-title" tabindex="-1">予約の一覧 <span class="admin-count" id="admin-count">0件</span></h2>
+          <button type="button" class="btn" id="export-csv">CSV で書き出す</button>
+        </div>
+        <p class="admin-note">日付・時刻の順に並びます。最初から入っている架空の予約（「予約済み」の枠）は、この一覧には出ません。CSV は Excel で開いたときに文字化けしないよう、BOM つきの UTF-8 で書き出します。</p>
+        <p class="admin-status" id="admin-status" role="status" aria-live="polite"></p>
+        <p class="admin-empty" id="admin-empty">まだ予約はありません。「予約する」から試してみてください。</p>
+        <div class="table-wrap" id="admin-table-wrap">
+          <table class="data admin-table" role="table">
+            <caption class="visually-hidden">受け付けた予約（日付・時刻の順）</caption>
+            <thead>
+              <tr role="row">
+                <th scope="col" role="columnheader">予約番号</th>
+                <th scope="col" role="columnheader">利用日時</th>
+                <th scope="col" role="columnheader">お名前・連絡先</th>
+                <th scope="col" role="columnheader" class="num">人数</th>
+                <th scope="col" role="columnheader">利用目的</th>
+                <th scope="col" role="columnheader">備考</th>
+                <th scope="col" role="columnheader"><span class="visually-hidden">操作</span></th>
+              </tr>
+            </thead>
+            <tbody id="admin-rows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ 説明 -->
+    <section class="card tips" aria-labelledby="tips-title">
+      <h2 id="tips-title">試し方</h2>
+      <ul>
+        <li>何も入力せずに「入力内容を確認する」を押すと、入力チェックの表示を確かめられます。</li>
+        <li>このページを2つのタブで開き、同じ時間を確認画面まで進めてから片方で予約すると、もう片方では二重予約にならず、お知らせが出ます。</li>
+        <li>最初から入っている架空の予約は、日付から計算で決めています（乱数は使っていないので、同じ日付なら毎回同じです）。</li>
+      </ul>
+    </section>
+
+    <section class="card prod" aria-labelledby="prod-title">
+      <h2 id="prod-title">本番では</h2>
+      <p>このデモは見本のため、データをブラウザの中だけに置いています。実際にお使いいただく形では、たとえば次のように置き換えられます。</p>
+      <ul>
+        <li><strong>保存先:</strong> Google スプレッドシートやデータベースに保存し、どの端末から見ても同じ空き状況になるようにします。</li>
+        <li><strong>確認メール:</strong> 予約が確定したら、お客さまと管理者に確認メールを自動で送ります。</li>
+        <li><strong>管理画面:</strong> 管理者だけがログインして、一覧・取り消し・CSV 書き出しを使えるようにします。</li>
+        <li><strong>二重予約の防止:</strong> 保存する側でも確定の直前に空きを確かめ、同時に申し込みがあっても二重予約にならないようにします。</li>
+        <li><strong>営業日と時間:</strong> 定休日・営業時間・枠の長さ・受付期間は、運用に合わせて変えられます。</li>
+      </ul>
+    </section>
+
+  </div>
+</main>
+
+<dialog id="cancel-dialog" class="confirm-dialog" aria-labelledby="cancel-title" aria-describedby="cancel-desc">
+  <h2 id="cancel-title">予約を取り消しますか？</h2>
+  <p id="cancel-desc"></p>
+  <p class="dialog-hint">取り消した時間は、すぐにまた予約できるようになります。</p>
+  <div class="actions">
+    <button type="button" class="btn" id="cancel-keep" autofocus>やめる</button>
+    <button type="button" class="btn btn--danger-solid" id="cancel-do">取り消す</button>
+  </div>
+</dialog>
+
+<footer class="site-footer"><div class="container">© 2026 Kota0004 ・ <a href="https://github.com/Kota0004">GitHub</a></div></footer>
+</body>
+</html>

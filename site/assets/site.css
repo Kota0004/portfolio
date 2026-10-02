@@ -1,0 +1,136 @@
+/* 実績紹介ページ（site/index.html）だけで使うスタイル。
+   色は base.css の変数だけで指定する（ライト/ダークの切り替えは base.css に任せる）。 */
+
+/* ページ内リンクで飛んだとき、見出しが画面の端に貼りつかないように */
+section[id] { scroll-margin-top: 16px; }
+
+/* 冒頭 */
+.hero { padding: 8px 0 0; }
+.hero__eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: .9rem;
+  font-weight: 600;
+}
+.hero h1 { font-size: 2rem; margin-bottom: .4em; }
+.hero__lead { font-size: 1.05rem; max-width: 40em; }
+.ai-note { max-width: 40em; }
+
+.jump {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* 各セクション */
+.section { margin-top: 48px; }
+.section > h2 {
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--line);
+}
+.section__lead { color: var(--muted); max-width: 44em; }
+.section__lead strong { color: var(--text); }
+
+/* 制作実績のカード：情報が多いので1列で読ませる */
+.works { display: grid; gap: 20px; }
+
+.work__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  margin-bottom: 8px;
+}
+.work__head h3 { margin: 0; font-size: 1.25rem; }
+.work__sub { font-weight: 600; color: var(--muted); font-size: 1rem; }
+.work__badges { margin: 0; }
+.status-badge { font-size: .85rem; }
+
+/* きっかけ・できること…の見出しと中身 */
+.facts { margin: 0 0 16px; }
+.facts > div {
+  display: grid;
+  grid-template-columns: 9em 1fr;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.facts dt { font-weight: 700; }
+.facts dd { margin: 0; }
+.facts ul { margin: 0; padding-left: 1.2em; }
+.facts li + li { margin-top: 4px; }
+
+/* 使った技術のタグ */
+.facts ul.tags {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.facts ul.tags li {
+  margin: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: .85rem;
+  line-height: 1.7;
+}
+
+.disclaimer, .unofficial { font-weight: 600; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 0;
+}
+
+/* デモとできること */
+.demo, .service { display: flex; flex-direction: column; }
+.demo h3, .service h3 { font-size: 1.15rem; }
+.demo .actions { margin-top: auto; padding-top: 8px; }
+
+.checks { list-style: none; padding: 0; margin: 0 0 16px; }
+.checks li { position: relative; padding-left: 1.5em; }
+.checks li + li { margin-top: 4px; }
+.checks li::before {
+  content: "";
+  position: absolute;
+  left: .2em;
+  top: .55em;
+  width: .7em;
+  height: .4em;
+  border-left: 2px solid var(--ok);
+  border-bottom: 2px solid var(--ok);
+  transform: rotate(-45deg);
+}
+
+.service ul { margin: 0; padding-left: 1.2em; }
+.service__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8em;
+  height: 1.8em;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: .85rem;
+  vertical-align: .1em;
+}
+
+.consult { margin-top: 20px; font-weight: 600; }
+
+.about-site p { color: var(--muted); max-width: 44em; }
+
+@media (max-width: 600px) {
+  .hero h1 { font-size: 1.7rem; }
+  .facts > div { grid-template-columns: 1fr; }
+  .actions .btn, .jump .btn { flex: 1 1 auto; }
+}

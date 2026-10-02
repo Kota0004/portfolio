@@ -1,0 +1,92 @@
+# 単体テストとブラウザのテスト。
+#
+# tests/unit/*.test.js と tests/e2e/*.e2e.js をワイルドカードで全部拾う。
+# テストを足すときは、この名前の決まりに合わせてファイルを置くだけでよい。
+name: テスト
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+# 同じブランチに続けて push したときは、古いほうの実行を止める。
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    name: 単体テスト
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: node --test
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(tests/unit/*.test.js)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "単体テストのファイルがありません（tests/unit/*.test.js）"
+            exit 0
+          fi
+          node --test "${files[@]}"
+
+  e2e:
+    name: ブラウザのテスト
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # リポジトリに package.json は置かない。テストのときだけ入れる。
+      - name: Playwright を入れる
+        run: |
+          npm install --no-save --no-package-lock playwright
+          npx playwright install --with-deps chromium
+
+      # サーバとテストを同じステップで動かす（サーバはステップの終わりまで生きている）。
+      - name: サーバを立ててテストを1つずつ実行
+        shell: bash
+        env:
+          BASE_URL: http://localhost:8000
+          # 書いてはいけない語（実名など）。公開リポジトリなので、語は Settings → Secrets に置く。
+          # 未設定ならその確認だけ省略される。
+          PORTFOLIO_FORBIDDEN_WORDS: ${{ secrets.PORTFOLIO_FORBIDDEN_WORDS }}
+        run: |
+          python3 -m http.server 8000 -d site > /tmp/http.log 2>&1 &
+          for i in $(seq 1 30); do
+            curl -fsS -o /dev/null "$BASE_URL/" && break
+            sleep 0.5
+          done
+          curl -fsS -o /dev/null "$BASE_URL/" || { echo "サーバが立ち上がらない"; cat /tmp/http.log; exit 1; }
+
+          shopt -s nullglob
+          files=(tests/e2e/*.e2e.js)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "ブラウザのテストのファイルがありません（tests/e2e/*.e2e.js）"
+            exit 0
+          fi
+          failed=()
+          for f in "${files[@]}"; do
+            echo "::group::$f"
+            if ! node "$f"; then
+              failed+=("$f")
+              echo "::error file=$f::$f が失敗しました"
+            fi
+            echo "::endgroup::"
+          done
+          if [ ${#failed[@]} -gt 0 ]; then
+            echo "失敗したテスト: ${failed[*]}"
+            exit 1
+          fi
+          echo "ブラウザのテストはすべて成功しました（${#files[@]} 本）"
